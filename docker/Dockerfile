@@ -4,10 +4,10 @@ FROM node:16 AS frontendBuilder
 WORKDIR /codeplatform
 
 # copy assets files to the container
-COPY assets/ .
+COPY app/ .
 
 # set assets/ as work dir to build frontend static files
-WORKDIR /codeplatform/assets
+WORKDIR /codeplatform/app
 RUN npm install
 RUN npm run build
 

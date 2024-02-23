@@ -1,19 +1,5 @@
 package main
 
-// go get: module github.com/gin-gonic/gin: Get "https://proxy.golang.org/github.com/gin-gonic/gin/@v/list": dial tcp 142.251.42.241:443: i/o timeout
-// because GOPROXY="https://proxy.golang.org,direct", "proxy.golang.org" is blocked
-// so run the following command
-// go env -w GO111MODULE=on
-// go env -w GOPROXY=https://goproxy.cn,direct
-// go env -w GOPROXY=https://proxy.golang.com.cn,direct
-// go get -u github.com/gin-gonic/gin
-
-// note: module requires Go 1.20
-// upgrade to the latest version
-
-// use mongo, first download the driver
-// go get go.mongodb.org/mongo-driver/mongo
-
 import (
 	"context"
 	"fmt"
@@ -196,6 +182,7 @@ func main() {
 	// connect to database
 	connectDB()
 
+	// /app/dist is the path of frontend source files
 	router.Use(static.Serve("/", static.LocalFile("./app/dist", true)))
 
 	// create api router

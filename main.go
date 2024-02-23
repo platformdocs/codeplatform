@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -56,8 +54,8 @@ func connectDB() {
 
 func insertCode(ctx *gin.Context, codeType string, content string) (*mongo.InsertOneResult, error) {
 
+	// connect to the database
 	client := DB.Mongo
-	// 获取数据库和集合
 	collection := client.Database("codeplatform").Collection("codeList")
 
 	results, _ := searchCode(ctx, codeType)
@@ -70,7 +68,7 @@ func insertCode(ctx *gin.Context, codeType string, content string) (*mongo.Inser
 	codedata.Content = content
 	if codeType == "save" {
 		codedata.Name = "main" + strconv.Itoa(index) + ".go"
-	} else {
+	} else if codeType == "exec" {
 		codedata.Name = "exec" + strconv.Itoa(index) + ".go"
 	}
 
@@ -90,14 +88,9 @@ func searchCode(ctx *gin.Context, codeType string) ([]CodeData, error) {
 		filter = bson.M{"type": "exec"}
 	}
 	cursor, err := collection.Find(ctx, filter)
-	if err != nil {
-		log.Println("saved code List error is ", err)
-	}
 
 	var results []CodeData
-	if err = cursor.All(ctx, &results); err != nil {
-		log.Println("saved code List error is ", err)
-	}
+	err = cursor.All(ctx, &results)
 	return results, err
 }
 
@@ -111,10 +104,6 @@ func updateCode(ctx *gin.Context, id string, content string) (*mongo.UpdateResul
 	}}
 
 	updateOneResult, err := collection.UpdateOne(ctx, filter, value)
-	if err != nil {
-		log.Println("update user data failed, err is ", err)
-	}
-	log.Println("update success !")
 
 	return updateOneResult, err
 }
@@ -126,11 +115,9 @@ func writeFile(filePath string, content string) bool {
 
 	err := os.WriteFile(filePath, []byte(content), 0644)
 	if err != nil {
-		fmt.Println("Error writing file:", err)
 		return false
 	}
 
-	fmt.Println("File written successfully.")
 	return true
 }
 
@@ -138,22 +125,13 @@ func writeFile(filePath string, content string) bool {
 * execute file and return the result
  */
 func execFile(filePath string) (string, string) {
+	// execute the golang file and output the result and error
 	cmd := exec.Command("go", "run", filePath)
-	// var stdout, stderr bytes.Buffer
-	// cmd.Stdout = &stdout // 标准输出
-	// cmd.Stderr = &stderr // 标准错误
-	// err := cmd.Run()
-	// outStr, errStr := string(stdout.Bytes()), string(stderr.Bytes())
-	// fmt.Printf("out:\n%s\nerr:\n%s\n", outStr, errStr)
-	// if err != nil {
-	// 	log.Fatalf("cmd.Run() failed with %s\n", err)
-	// }
 	doneChan := make(chan []byte, 1)
 	errorChan := make(chan string, 1)
 	go func() {
 		output, err := cmd.CombinedOutput()
 		if err != nil {
-			log.Printf("execute command failed, output: %s, error: %v\n", string(output), err)
 			var msg string = string(output) + err.Error()
 			errorChan <- msg
 			return
@@ -163,14 +141,11 @@ func execFile(filePath string) (string, string) {
 
 	select {
 	case <-time.After(10 * time.Second):
-		// log.Printf("execute command 10s timeout\n")
 		cmd.Process.Kill()
 		return "timeout", "execute code over 10s timeout"
 	case output := <-doneChan:
-		// fmt.Printf("out:\n%s", output)
 		return "success", string(output)
 	case err := <-errorChan:
-		// log.Printf("execute command failure, error: %v\n", err)
 		return "error", err
 	}
 }
@@ -202,7 +177,12 @@ func main() {
 			}
 			filePath := "execCode.go"
 			// write code to the file
-			writeFile(filePath, requestData.Content)
+			writeResult := writeFile(filePath, requestData.Content)
+
+			if !writeResult {
+				ctx.JSON(500, gin.H{"error": "server write file error"})
+				return
+			}
 
 			// run the code and get the result message
 			var resultType, message = execFile(filePath)
@@ -210,7 +190,6 @@ func main() {
 			_, err := insertCode(ctx, "exec", requestData.Content)
 
 			if err != nil {
-				log.Println("insert one error is ", err)
 				ctx.JSON(500, gin.H{"error": err.Error()})
 				return
 			}
@@ -241,7 +220,6 @@ func main() {
 			_, err := insertCode(ctx, "save", requestData.Content)
 
 			if err != nil {
-				log.Println("insert one error is ", err)
 				ctx.JSON(500, gin.H{"error": err.Error()})
 				return
 			}
@@ -261,7 +239,6 @@ func main() {
 			_, err := updateCode(ctx, requestData.Id, requestData.Content)
 
 			if err != nil {
-				log.Println("insert one error is ", err)
 				ctx.JSON(500, gin.H{"error": err.Error()})
 				return
 			}

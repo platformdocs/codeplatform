@@ -102,8 +102,7 @@ func main() {
           setMessage(message)
           setType(type)
           searchCode()
-        },
-        error => {console.log('失败了',error)}
+        }
     ).finally(()=>{
       setRunLoading(false)
     })
@@ -125,8 +124,7 @@ func main() {
     axios.post(uri,postData).then(
         () => {
           searchCode()
-        },
-        error => {console.log('失败了',error)}
+        }
     ).finally(()=>{
       setSaveLoading(false)
     })
@@ -138,8 +136,7 @@ func main() {
     axios.get('/api/search').then(
         response => {
           setCodeList(response.data||[])
-        },
-        error => {console.log('失败了',error)}
+        }
     )
   }
 
@@ -157,6 +154,7 @@ func main() {
       setSaveText('Save')
       setVisibility('visible')
     }
+    setMessage('')
   }
 
   // save button control

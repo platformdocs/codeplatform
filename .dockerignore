@@ -1,0 +1,28 @@
+# This file
+.dockerignore
+
+# Git files
+.git/
+.gitignore
+
+# VS Code config dir
+.vscode/
+
+# Docker configuration files
+docker/
+
+# Assets dependencies and built files
+app/build/
+app/node_modules/
+
+# Log files
+logs/
+
+# Built binary
+cmd/pharos/pharos
+
+# ENV file
+.env
+
+# Readme file
+README.md

@@ -21,10 +21,6 @@ type RequestData struct {
 	Id      string `json:"id"`
 }
 
-var (
-	DB *Database
-)
-
 type Database struct {
 	Mongo *mongo.Client
 }
@@ -40,8 +36,12 @@ type CodeData struct {
 func Init() {
 }
 
+var (
+	DB *Database
+)
+
 func connectDB() {
-	opts := options.Client().ApplyURI("mongodb://localhost:27017")
+	opts := options.Client().ApplyURI("mongodb://mongodb:27017")
 	client, err := mongo.Connect(context.TODO(), opts)
 	if err != nil {
 		panic(err)
@@ -52,6 +52,7 @@ func connectDB() {
 	}
 }
 
+// insert the code to the database, two types: save and exec
 func insertCode(ctx *gin.Context, codeType string, content string) (*mongo.InsertOneResult, error) {
 
 	// connect to the database
@@ -78,6 +79,7 @@ func insertCode(ctx *gin.Context, codeType string, content string) (*mongo.Inser
 	return insertOneResult, err
 }
 
+// search the code according to the code type
 func searchCode(ctx *gin.Context, codeType string) ([]CodeData, error) {
 	client := DB.Mongo
 	collection := client.Database("codeplatform").Collection("codeList")
@@ -94,6 +96,7 @@ func searchCode(ctx *gin.Context, codeType string) ([]CodeData, error) {
 	return results, err
 }
 
+// update the code user saved
 func updateCode(ctx *gin.Context, id string, content string) (*mongo.UpdateResult, error) {
 	client := DB.Mongo
 	collection := client.Database("codeplatform").Collection("codeList")
@@ -140,9 +143,9 @@ func execFile(filePath string) (string, string) {
 	}()
 
 	select {
-	case <-time.After(10 * time.Second):
+	case <-time.After(30 * time.Second):
 		cmd.Process.Kill()
-		return "timeout", "execute code over 10s timeout"
+		return "timeout", "execute code over 30s timeout"
 	case output := <-doneChan:
 		return "success", string(output)
 	case err := <-errorChan:
@@ -163,11 +166,6 @@ func main() {
 	// create api router
 	api := router.Group("/api")
 	{
-		// test
-		api.GET("/hello", func(ctx *gin.Context) {
-			ctx.JSON(200, gin.H{"msg": "world"})
-		})
-
 		// run code
 		api.POST("/run", func(ctx *gin.Context) {
 			var requestData RequestData
@@ -224,7 +222,7 @@ func main() {
 				return
 			}
 			ctx.JSON(200, gin.H{
-				"message": "保存成功",
+				"message": "code save successfully",
 			})
 		})
 
@@ -243,13 +241,13 @@ func main() {
 				return
 			}
 			ctx.JSON(200, gin.H{
-				"message": "更新成功",
+				"message": "code update successfully",
 			})
 		})
 	}
 
 	router.NoRoute(func(ctx *gin.Context) { ctx.JSON(404, gin.H{"msg": "not found"}) })
 
-	// 开始监听服务请求
+	// start server
 	router.Run(":8080")
 }

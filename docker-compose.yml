@@ -1,0 +1,30 @@
+version: "3"
+
+services:
+  codeplatform:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - mongodb
+    networks:
+      - mongo-go
+    ports:
+      - 8080:8080
+
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    restart: on-failure
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: 
+      MONGO_INITDB_ROOT_PASSWORD: 
+    ports:
+      - 27017:27017
+    networks:
+      - mongo-go
+
+networks:
+  mongo-go:
+    driver: bridge

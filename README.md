@@ -1,4 +1,4 @@
-# codeplatform V1.0
+# Codeplatform V1.0
 
 ##A Golang online code execution platform
 
@@ -11,7 +11,7 @@
 
 ### React
 
-For the front end, the follow the steps below is to run the developemnt project.
+For the front end, the follow the steps below is to run in the development environment.
 
 ```bash
 cd app
@@ -58,6 +58,14 @@ to start the server
 
 ```bash
 go run main.go
+```
+
+### Docker
+Docker will build the frontend react code and backend golang code, also will start the mongo database instance.
+You can run the following command to start the docker container.
+
+```bash
+docker-compose up -d
 ```
 
 You can visit the platform at [CodePlatform](http://localhost:8080)

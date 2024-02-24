@@ -24,6 +24,16 @@ import 'codemirror/addon/fold/foldgutter.js';
 import 'codemirror/addon/fold/brace-fold.js';
 import 'codemirror/addon/fold/comment-fold.js';
 
+type Code = {
+  id:string, 
+  type:string, 
+  name:string, 
+  content: string, 
+  time: string, 
+  result: string, 
+  resultType: string
+}
+
 function App() {
 
   // output
@@ -160,7 +170,7 @@ func main() {
         response => {
           setCodeList(response.data||[])
           if((key === 'exec' && type === 'exec') || key === 'save') {
-            const savedList = response.data.filter(item => item.type === key)
+            const savedList = response.data.filter((item : Code) => item.type === key)
             setActive(savedList[savedList.length-1]?.id)
           }
         }
@@ -216,7 +226,7 @@ func main() {
                     clickSegment("", "")
                   }}>Default</Segment>
                   {
-                    codeList.map((item : {type:string, id:string, name:string, content: string, time: string, result: string, resultType: string},index)=>{
+                    codeList.map((item : Code,index)=>{
                       if(item.type == "save")
                         return <Segment className={'left ' +  (active == item.id ? "colde-focus" : "")} onClick={() => {
                           clickSegment(item.id, item.content, item.type, item.result, item.resultType)
@@ -235,7 +245,7 @@ func main() {
               <CardContent className='code-list'>
                 <SegmentGroup>
                   {
-                    codeList.map((item : {type:string, id:string, name:string, content: string, time: string, result: string, resultType: string},index)=>{
+                    codeList.map((item : Code,index)=>{
                       if(item.type == "exec")
                         return <Segment className={'left ' +  (active == item.id ? "colde-focus" : "")} onClick={() => {
                           clickSegment(item.id, item.content, item.type, item.result, item.resultType)

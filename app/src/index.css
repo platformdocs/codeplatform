@@ -121,3 +121,11 @@ button:focus-visible {
 .code-list .segment {
   cursor: pointer;
 }
+
+.tip-message {
+  position: absolute!important;
+  width: 400px;
+  left: 50%;
+  margin-left: -200px!important;
+  z-index: 999;
+}

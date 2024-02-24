@@ -20,7 +20,7 @@ type RequestData struct {
 	Content    string `json:"content"`
 	Id         string `json:"id"`
 	Result     string `json:"result"`
-	ResultType string `bson:"resultType" json:"resultType"`
+	ResultType string `json:"resultType"`
 }
 
 type Database struct {
@@ -193,7 +193,7 @@ func main() {
 			// run the code and get the result message
 			var resultType, message = execFile(filePath)
 
-			_, err := insertCode(ctx, "exec", requestData.Content, message)
+			_, err := insertCode(ctx, "exec", requestData.Content, message, resultType)
 
 			if err != nil {
 				ctx.JSON(500, gin.H{"error": err.Error()})

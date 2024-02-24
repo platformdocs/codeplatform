@@ -8,7 +8,7 @@ import {
   Grid, GridRow, GridColumn, 
   SegmentGroup, Segment, 
   DropdownMenu, DropdownItem, Dropdown,
-  Message,
+  Message, Transition
 } from 'semantic-ui-react'
 import { UnControlled as CodeMirror } from "react-codemirror2";
 import "codemirror/lib/codemirror.css";
@@ -28,7 +28,8 @@ function App() {
 
   // output
   const [message, setMessage] = useState('')
-  const [resultType, setType] = useState('')
+  const [type, setType] = useState('')
+  const [resultType, setResultType] = useState('')
   const renderMessage = () => {
     if(!message) return (
       <Message></Message>
@@ -46,7 +47,7 @@ function App() {
     } else if(resultType === 'error') {
       return (
         <Message error>{
-          message.split('\n').map((line, i) => {
+          message.replace(/execCode.go/g, 'main.go').split('\n').map((line, i) => {
             if(i != 0) return (
               <p key={i}>{line}</p>
             )
@@ -92,6 +93,9 @@ func main() {
   const [runLoading, setRunLoading] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
 
+  const [tipMessage, setTipMessage] = useState<string>('')
+  const [visible, setVisible] = useState(false)
+
   // code
   const [code, setCode] = useState<string | undefined>();
   const runCode = ()=>{
@@ -103,8 +107,13 @@ func main() {
         response => {
           const {message, resultType} = response.data
           setMessage(message)
-          setType(resultType)
-          searchCode()
+          setResultType(resultType)
+          searchCode('exec')
+          setTipMessage('code executed successfully')
+          setVisible(true)
+          setTimeout(()=>{
+            setVisible(false)
+          }, 1500)
         }
     ).finally(()=>{
       setRunLoading(false)
@@ -116,19 +125,28 @@ func main() {
     const postData : {
       content: string | undefined,
       result: string | undefined,
+      resultType: string | undefined,
       id?: string | undefined
     } = {
       content: code,
-      result: message
+      result: message,
+      resultType: resultType,
     }
     let uri = '/api/save'
+    let key = 'save'
     if(active) {
       uri = '/api/update'
+      key = 'update'
       postData.id = active
     }
     axios.post(uri,postData).then(
         () => {
-          searchCode()
+          setTipMessage(`code ${key} successfully`)
+          setVisible(true)
+          setTimeout(()=>{
+            setVisible(false)
+          }, 1500)
+          searchCode(key)
         }
     ).finally(()=>{
       setSaveLoading(false)
@@ -137,10 +155,14 @@ func main() {
 
   // codeList
   const [codeList, setCodeList] = useState([]);
-  const searchCode = ()=>{
+  const searchCode = (key ?: string)=>{
     axios.get('/api/search').then(
         response => {
           setCodeList(response.data||[])
+          if((key === 'exec' && type === 'exec') || key === 'save') {
+            const savedList = response.data.filter(item => item.type === key)
+            setActive(savedList[savedList.length-1]?.id)
+          }
         }
     )
   }
@@ -149,9 +171,10 @@ func main() {
   const [active, setActive] = useState("");
   const clickSegment = (active : string, content : string, type : string = '', result : string = '', resultType : string = '') => {
     setActive(active)
+    setType(type)
     setCode(content)
-    setType(resultType)
     setMessage(result)
+    setResultType(resultType)
     if(type == 'save') {
       setSaveText('Update')
       setVisibility('visible')
@@ -161,7 +184,6 @@ func main() {
       setSaveText('Save')
       setVisibility('visible')
     }
-    setMessage('')
   }
 
   // save button control
@@ -176,6 +198,9 @@ func main() {
   return (
     <>
       <Container>
+      <Transition visible={visible} animation='scale' duration={500}>
+        <Message success className='tip-message'>{tipMessage}</Message>
+      </Transition>
       <Grid>
         <GridRow columns={2}>
           <GridColumn width={4}>

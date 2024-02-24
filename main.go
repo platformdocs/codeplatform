@@ -17,8 +17,10 @@ import (
 )
 
 type RequestData struct {
-	Content string `json:"content"`
-	Id      string `json:"id"`
+	Content    string `json:"content"`
+	Id         string `json:"id"`
+	Result     string `json:"result"`
+	ResultType string `bson:"resultType" json:"resultType"`
 }
 
 type Database struct {
@@ -26,11 +28,13 @@ type Database struct {
 }
 
 type CodeData struct {
-	Id      string `bson:"_id,omitempty" json:"id"`
-	Name    string `bson:"name" json:"name"`
-	Content string `bson:"content" json:"content"`
-	Time    string `bson:"time" json:"time"`
-	Type    string `bson:"type" json:"type"`
+	Id         string `bson:"_id,omitempty" json:"id"`
+	Name       string `bson:"name" json:"name"`
+	Content    string `bson:"content" json:"content"`
+	Time       string `bson:"time" json:"time"`
+	Type       string `bson:"type" json:"type"`
+	Result     string `bson:"result" json:"result"`
+	ResultType string `bson:"resultType" json:"resultType"`
 }
 
 func Init() {
@@ -53,7 +57,7 @@ func connectDB() {
 }
 
 // insert the code to the database, two types: save and exec
-func insertCode(ctx *gin.Context, codeType string, content string) (*mongo.InsertOneResult, error) {
+func insertCode(ctx *gin.Context, codeType string, content string, result string, resultType string) (*mongo.InsertOneResult, error) {
 
 	// connect to the database
 	client := DB.Mongo
@@ -67,6 +71,8 @@ func insertCode(ctx *gin.Context, codeType string, content string) (*mongo.Inser
 	codedata.Id = uuid.New().String()
 	codedata.Time = time.Now().Format("2006-01-02 15:04:05")
 	codedata.Content = content
+	codedata.Result = result
+	codedata.ResultType = resultType
 	if codeType == "save" {
 		codedata.Name = "main" + strconv.Itoa(index) + ".go"
 	} else if codeType == "exec" {
@@ -97,13 +103,15 @@ func searchCode(ctx *gin.Context, codeType string) ([]CodeData, error) {
 }
 
 // update the code user saved
-func updateCode(ctx *gin.Context, id string, content string) (*mongo.UpdateResult, error) {
+func updateCode(ctx *gin.Context, id string, content string, result string, resultType string) (*mongo.UpdateResult, error) {
 	client := DB.Mongo
 	collection := client.Database("codeplatform").Collection("codeList")
 	filter := bson.M{"_id": id}
 	value := bson.M{"$set": bson.M{
-		"Content": content,
-		"Time":    time.Now().Format("2006-01-02 15:04:05"),
+		"Content":    content,
+		"Result":     result,
+		"ResultType": resultType,
+		"Time":       time.Now().Format("2006-01-02 15:04:05"),
 	}}
 
 	updateOneResult, err := collection.UpdateOne(ctx, filter, value)
@@ -185,7 +193,7 @@ func main() {
 			// run the code and get the result message
 			var resultType, message = execFile(filePath)
 
-			_, err := insertCode(ctx, "exec", requestData.Content)
+			_, err := insertCode(ctx, "exec", requestData.Content, message)
 
 			if err != nil {
 				ctx.JSON(500, gin.H{"error": err.Error()})
@@ -193,8 +201,8 @@ func main() {
 			}
 
 			ctx.JSON(200, gin.H{
-				"type":    resultType,
-				"message": message,
+				"resultType": resultType,
+				"message":    message,
 			})
 
 		})
@@ -215,7 +223,7 @@ func main() {
 				return
 			}
 
-			_, err := insertCode(ctx, "save", requestData.Content)
+			_, err := insertCode(ctx, "save", requestData.Content, requestData.Result, requestData.ResultType)
 
 			if err != nil {
 				ctx.JSON(500, gin.H{"error": err.Error()})
@@ -234,7 +242,7 @@ func main() {
 				return
 			}
 
-			_, err := updateCode(ctx, requestData.Id, requestData.Content)
+			_, err := updateCode(ctx, requestData.Id, requestData.Content, requestData.Result, requestData.ResultType)
 
 			if err != nil {
 				ctx.JSON(500, gin.H{"error": err.Error()})

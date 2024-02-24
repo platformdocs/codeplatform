@@ -28,9 +28,12 @@ function App() {
 
   // output
   const [message, setMessage] = useState('')
-  const [type, setType] = useState('')
+  const [resultType, setType] = useState('')
   const renderMessage = () => {
-    if(type === 'success') {
+    if(!message) return (
+      <Message></Message>
+    )
+    if(resultType === 'success') {
       return (
         <Message success>{
           message.split('\n').map((line, i) => {
@@ -40,7 +43,7 @@ function App() {
           })
         }</Message>
       )
-    } else if(type === 'error') {
+    } else if(resultType === 'error') {
       return (
         <Message error>{
           message.split('\n').map((line, i) => {
@@ -50,7 +53,7 @@ function App() {
           })
         }</Message>
       )
-    } else if(type === 'timeout') {
+    } else if(resultType === 'timeout') {
       return (
         <Message warning>{message}</Message>
       )
@@ -98,9 +101,9 @@ func main() {
       content: code
     }).then(
         response => {
-          const {message, type} = response.data
+          const {message, resultType} = response.data
           setMessage(message)
-          setType(type)
+          setType(resultType)
           searchCode()
         }
     ).finally(()=>{
@@ -112,9 +115,11 @@ func main() {
     setSaveLoading(true)
     const postData : {
       content: string | undefined,
+      result: string | undefined,
       id?: string | undefined
     } = {
-      content: code
+      content: code,
+      result: message
     }
     let uri = '/api/save'
     if(active) {
@@ -142,9 +147,11 @@ func main() {
 
   // default active selection
   const [active, setActive] = useState("");
-  const clickSegment = (active : string, content : string, type ?: string) => {
+  const clickSegment = (active : string, content : string, type : string = '', result : string = '', resultType : string = '') => {
     setActive(active)
     setCode(content)
+    setType(resultType)
+    setMessage(result)
     if(type == 'save') {
       setSaveText('Update')
       setVisibility('visible')
@@ -184,10 +191,10 @@ func main() {
                     clickSegment("", "")
                   }}>Default</Segment>
                   {
-                    codeList.map((item : {type:string, id:string, name:string, content: string, time: string},index)=>{
+                    codeList.map((item : {type:string, id:string, name:string, content: string, time: string, result: string, resultType: string},index)=>{
                       if(item.type == "save")
                         return <Segment className={'left ' +  (active == item.id ? "colde-focus" : "")} onClick={() => {
-                          clickSegment(item.id, item.content, item.type)
+                          clickSegment(item.id, item.content, item.type, item.result, item.resultType)
                         }} key={index}>{item.name.split('.')[0]}</Segment>
                     })
                   }
@@ -203,10 +210,10 @@ func main() {
               <CardContent className='code-list'>
                 <SegmentGroup>
                   {
-                    codeList.map((item : {type:string, id:string, name:string, content: string, time: string},index)=>{
+                    codeList.map((item : {type:string, id:string, name:string, content: string, time: string, result: string, resultType: string},index)=>{
                       if(item.type == "exec")
                         return <Segment className={'left ' +  (active == item.id ? "colde-focus" : "")} onClick={() => {
-                          clickSegment(item.id, item.content, item.type)
+                          clickSegment(item.id, item.content, item.type, item.result, item.resultType)
                         }} key={index}>{item.name.split('.')[0] + '(' + item.time + ')'}</Segment>
                     })
                   }

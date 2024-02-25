@@ -69,7 +69,8 @@ func insertCode(ctx *gin.Context, codeType string, content string, result string
 
 	codedata := CodeData{}
 	codedata.Id = uuid.New().String()
-	codedata.Time = time.Now().Format("2006-01-02 15:04:05")
+	loc, _ := time.LoadLocation("Asia/Shanghai")
+	codedata.Time = time.Now().In(loc).Format("2006-01-02 15:04:05")
 	codedata.Content = content
 	codedata.Result = result
 	codedata.ResultType = resultType
@@ -107,11 +108,12 @@ func updateCode(ctx *gin.Context, id string, content string, result string, resu
 	client := DB.Mongo
 	collection := client.Database("codeplatform").Collection("codeList")
 	filter := bson.M{"_id": id}
+	loc, _ := time.LoadLocation("Asia/Shanghai")
 	value := bson.M{"$set": bson.M{
 		"Content":    content,
 		"Result":     result,
 		"ResultType": resultType,
-		"Time":       time.Now().Format("2006-01-02 15:04:05"),
+		"Time":       time.Now().In(loc).Format("2006-01-02 15:04:05"),
 	}}
 
 	updateOneResult, err := collection.UpdateOne(ctx, filter, value)
